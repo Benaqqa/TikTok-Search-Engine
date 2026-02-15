@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  tiktok-scraper:
+    image: <scraper-image-name>
+    networks:
+      - app-network
+    volumes:
+      - video-data:/output
+    environment:
+      - OUTPUT_URL=http://processor:8000/videos
+
+  # processor:
+  #   build: ./processor
+  #   networks:
+  #     - app-network
+  #   volumes:
+  #     - video-data:/input
+  #   environment:
+  #     - NEXT_SERVICE_URL=http://next-service:8080/process
+
+  # next-service:
+  #   build: ./next-service
+  #   networks:
+  #     - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  video-data:
