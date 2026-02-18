@@ -1,0 +1,11 @@
+{
+  "name": "tiktok-link-extractor",
+  "version": "1.0.0",
+  "description": "Scrape TikTok video links",
+  "main": "linkExtractor.js",
+  "dependencies": {
+    "puppeteer": "^23.0.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  }
+}
