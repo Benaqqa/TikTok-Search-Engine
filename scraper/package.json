@@ -1,9 +1,10 @@
 {
   "name": "tiktok-link-extractor",
   "version": "1.0.0",
-  "description": "Scrape TikTok video links",
+  "description": "Scrape TikTok video links and produce to Kafka",
   "main": "linkExtractor.js",
   "dependencies": {
+    "kafkajs": "^2.2.4",
     "puppeteer": "^23.0.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2"

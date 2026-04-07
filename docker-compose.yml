@@ -1,28 +1,56 @@
 version: '3.8'
 
 services:
+  # Redpanda Kafka broker
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:latest
+    container_name: redpanda-broker
+    networks:
+      - app-network
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      - REDPANDA_ADVERTISED_KAFKA_API_ADDRESSES=redpanda:29092
+    command:
+      - redpanda
+      - start
+      - --kafka-addr=0.0.0.0:29092
+      - --advertise-kafka-addr=redpanda:29092
+
+  # TikTok Link Extractor - Kafka Producer
   tiktok-scraper:
-    image: <scraper-image-name>
+    build: ./scraper
+    container_name: tiktok-scraper
+    depends_on:
+      - redpanda
+    networks:
+      - app-network
+    volumes:
+      - ./scraper/Links:/app/Links
+      - ./scraper/cookies.json:/app/cookies.json:ro
+    environment:
+      - KAFKA_BROKERS=redpanda:29092
+      - KAFKA_TOPIC=tiktok-video-links
+      - MAX_VIDEOS=100
+      - PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
+      - COOKIES_PATH=/app/cookies.json
+
+  # yt-dlp Consumer
+  yt-dlp-consumer:
+    build: ./Download
+    container_name: yt-dlp-consumer
+    depends_on:
+      - redpanda
     networks:
       - app-network
     volumes:
       - video-data:/output
     environment:
-      - OUTPUT_URL=http://processor:8000/videos
-
-  # processor:
-  #   build: ./processor
-  #   networks:
-  #     - app-network
-  #   volumes:
-  #     - video-data:/input
-  #   environment:
-  #     - NEXT_SERVICE_URL=http://next-service:8080/process
-
-  # next-service:
-  #   build: ./next-service
-  #   networks:
-  #     - app-network
+      - KAFKA_BROKERS=redpanda:29092
+      - KAFKA_TOPIC=tiktok-video-links
+      - OUTPUT_PATH=/output
+    working_dir: /app
 
 networks:
   app-network:
