@@ -17,7 +17,17 @@ services:
       - start
       - --kafka-addr=0.0.0.0:29092
       - --advertise-kafka-addr=redpanda:29092
-
+  redpanda-console:
+    image: docker.redpanda.com/redpandadata/console:latest
+    container_name: redpanda-console
+    depends_on:
+      - redpanda
+    networks:
+      - app-network
+    ports:
+      - "8080:8080"
+    environment:
+      - KAFKA_BROKERS=redpanda:29092
   # TikTok Link Extractor - Kafka Producer
   tiktok-scraper:
     build: ./scraper
@@ -45,16 +55,48 @@ services:
     networks:
       - app-network
     volumes:
-      - video-data:/output
+      - audio-data:/output
     environment:
       - KAFKA_BROKERS=redpanda:29092
       - KAFKA_TOPIC=tiktok-video-links
       - OUTPUT_PATH=/output
     working_dir: /app
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+    container_name: elasticsearch
+    networks:
+      - app-network
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false    # disable auth for local dev
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m  # limit RAM usage
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
 
+  whisper-transcriber:
+    build: ./process
+    container_name: whisper-transcriber
+    depends_on:
+      - redpanda
+      - elasticsearch
+    networks:
+      - app-network
+    volumes:
+      - audio-data:/audio
+    environment:
+      - AUDIO_PATH=/audio
+      - WHISPER_MODEL=medium
+      - POLL_INTERVAL=5
+      - KAFKA_BROKERS=redpanda:29092
+      - KAFKA_OUTPUT_TOPIC=transcriptions
+      - ES_HOST=http://elasticsearch:9200
+      - ES_INDEX=tiktok-transcriptions
 networks:
   app-network:
     driver: bridge
 
 volumes:
-  video-data:
+  audio-data:
+  es-data:

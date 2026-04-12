@@ -1,0 +1,4 @@
+openai-whisper
+kafka-python
+elasticsearch==8.13.0
+yt-dlp[default,curl-cffi]
